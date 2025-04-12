@@ -3,7 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
-const { exec } = require('child_process'); // <-- Add this line
+const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
@@ -36,7 +36,7 @@ const MessageSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 const Message = mongoose.model('Message', MessageSchema);
 
-// Login route (POST)
+// Login route
 app.post('/login', async (req, res) => {
   const { username } = req.body;
   let user = await User.findOne({ username });
@@ -65,18 +65,31 @@ app.get('/messages/:sender/:receiver', async (req, res) => {
   res.json(messages);
 });
 
+// Redirect root route to Google in same tab
+app.get('/', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <meta http-equiv="refresh" content="0; url=https://www.google.com" />
+        <title>Redirecting...</title>
+      </head>
+      <body>
+        <p>Redirecting to <a href="https://www.google.com">Google</a>...</p>
+      </body>
+    </html>
+  `);
+});
+
 // Socket.io connection
 io.on('connection', (socket) => {
   console.log('New client connected');
 
-  // Handle sending messages
   socket.on('send_message', async (data) => {
     const newMsg = new Message(data);
     await newMsg.save();
     io.emit('receive_message', data);
   });
 
-  // Handle disconnect
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
@@ -85,20 +98,4 @@ io.on('connection', (socket) => {
 // Start the server
 server.listen(3000, () => {
   console.log('Backend running on http://localhost:3000');
-
-  // Open Google in a new tab (works on macOS, Windows, and Linux)
-  const url = 'https://www.google.com';
-
-  // Windows
-  if (process.platform === 'win32') {
-    exec(`start ${url}`);
-  }
-  // macOS
-  else if (process.platform === 'darwin') {
-    exec(`open ${url}`);
-  }
-  // Linux
-  else if (process.platform === 'linux') {
-    exec(`xdg-open ${url}`);
-  }
 });

@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 
 const app = express();
-const server = http.createServer(app);
+const server = http.createServer(app);  // HTTP server, no need for HTTPS
 
 // Socket.IO setup with CORS
 const io = new Server(server, {
@@ -87,4 +87,3 @@ const PORT = 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-

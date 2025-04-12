@@ -3,6 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
+const { exec } = require('child_process'); // <-- Add this line
 
 const app = express();
 const server = http.createServer(app);
@@ -82,6 +83,22 @@ io.on('connection', (socket) => {
 });
 
 // Start the server
-server.listen(5000, () => {
-  console.log('Backend running on http://localhost:5000');
+server.listen(3000, () => {
+  console.log('Backend running on http://localhost:3000');
+
+  // Open Google in a new tab (works on macOS, Windows, and Linux)
+  const url = 'https://www.google.com';
+
+  // Windows
+  if (process.platform === 'win32') {
+    exec(`start ${url}`);
+  }
+  // macOS
+  else if (process.platform === 'darwin') {
+    exec(`open ${url}`);
+  }
+  // Linux
+  else if (process.platform === 'linux') {
+    exec(`xdg-open ${url}`);
+  }
 });

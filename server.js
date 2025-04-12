@@ -1,42 +1,46 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
-const { Server } = require('socket.io');
 const mongoose = require('mongoose');
-const { exec } = require('child_process');
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
+
+// Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
     origin: '*',
   }
 });
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Atlas connection
+// MongoDB connection (direct string)
 mongoose.connect('mongodb+srv://missari:missari123@cluster0.2uqs2.mongodb.net/chatapp?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('Connected to MongoDB Atlas'))
-.catch((error) => console.error('MongoDB connection error:', error));
+.then(() => console.log('✅ Connected to MongoDB Atlas'))
+.catch((error) => console.error('❌ MongoDB connection error:', error));
 
-// Define User and Message schemas
-const UserSchema = new mongoose.Schema({ username: String });
-const MessageSchema = new mongoose.Schema({
+// Mongoose models
+const User = mongoose.model('User', new mongoose.Schema({ username: String }));
+const Message = mongoose.model('Message', new mongoose.Schema({
   sender: String,
   receiver: String,
   content: String,
   timestamp: { type: Date, default: Date.now },
+}));
+
+// Google redirect route
+app.get('/', (req, res) => {
+  res.redirect('https://www.google.com');
 });
 
-const User = mongoose.model('User', UserSchema);
-const Message = mongoose.model('Message', MessageSchema);
-
-// Login route
+// API routes
 app.post('/login', async (req, res) => {
   const { username } = req.body;
   let user = await User.findOne({ username });
@@ -47,13 +51,11 @@ app.post('/login', async (req, res) => {
   res.json(user);
 });
 
-// Get all users
 app.get('/users', async (req, res) => {
   const users = await User.find();
   res.json(users);
 });
 
-// Get messages between two users
 app.get('/messages/:sender/:receiver', async (req, res) => {
   const { sender, receiver } = req.params;
   const messages = await Message.find({
@@ -65,24 +67,9 @@ app.get('/messages/:sender/:receiver', async (req, res) => {
   res.json(messages);
 });
 
-// Redirect root route to Google in same tab
-app.get('/', (req, res) => {
-  res.send(`
-    <html>
-      <head>
-        <meta http-equiv="refresh" content="0; url=https://www.google.com" />
-        <title>Redirecting...</title>
-      </head>
-      <body>
-        <p>Redirecting to <a href="https://www.google.com">Google</a>...</p>
-      </body>
-    </html>
-  `);
-});
-
-// Socket.io connection
+// Socket.IO handlers
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  console.log('🔌 Client connected');
 
   socket.on('send_message', async (data) => {
     const newMsg = new Message(data);
@@ -91,11 +78,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    console.log('❎ Client disconnected');
   });
 });
 
-// Start the server
-server.listen(3000, () => {
-  console.log('Backend running on http://localhost:3000');
+// Start server on port 4000
+const PORT = 4000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
